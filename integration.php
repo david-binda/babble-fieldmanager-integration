@@ -120,11 +120,18 @@ class Babble_Fieldmanager_Group extends Fieldmanager_Group {
 }
 
 class Babble_Fieldmanager_RichTextarea extends Fieldmanager_RichTextarea {
+
+	public $babble_element_id = null;
+
 	public function render_field( $name, $value, $title, $post ) {
 		$context = new Babble_Fieldmanager_Context( $title, $this );
 		return $context->render_fields( $post, $value, true );;
 	}
 	public function get_element_id() {
+		//allows different id for Babble edit screen
+		if ( true == isset( $this->babble_element_id ) && false === empty( $this->babble_element_id ) ) {
+			return $this->babble_element_id;
+		}
 		$el = $this;
 		$id_slugs = array();
 		while ( $el ) {
@@ -152,6 +159,8 @@ class Babble_Fieldmanager_Meta_Field extends Babble_Meta_Field {
 
 	public $args;
 
+	public $translation_meta_key = 'bbl_translation[meta]';
+
 	public function __construct( WP_Post $post, $meta_key, $meta_title, array $args = array() ) {
 
 		$this->post       = $post;
@@ -166,7 +175,7 @@ class Babble_Fieldmanager_Meta_Field extends Babble_Meta_Field {
 		$type = "Babble_{$type}";
 
 		//rename
-		$this->name = "bbl_translation[meta][{$meta_key}]";
+		$this->name = "{$this->translation_meta_key}[{$meta_key}]";
 		$fm_args['name'] = $this->name;
 
 		$this->fm = new $type( $fm_args );
@@ -180,8 +189,31 @@ class Babble_Fieldmanager_Meta_Field extends Babble_Meta_Field {
 
 	public function get_output() {
 		$this->set_readonly_attribute();
-		$field = $this->fm->render_field( $this->name, $this->get_value(), $this->meta_title, $this->post );
-		return $field;
+		$this->maybe_update_ids();
+		
+		ob_start();
+		echo $this->fm->render_field( $this->name, $this->get_value(), $this->meta_title, $this->post );
+		$field = ob_get_clean();
+
+		$original_meta = 'bbl_translation_original[meta]';
+		$field = str_replace( sprintf( 'name="%s' , $this->translation_meta_key ), sprintf( 'name="%s', $original_meta ) , $field );
+
+		//echoing the field instead of properly returing it will preserve HTML
+		echo $field;
+	}
+
+	public function maybe_update_ids( $el = null ) {
+		if ( null === $el ) {
+			$el = $this->fm;
+		}
+		if ( $el instanceof Babble_Fieldmanager_RichTextarea ) {
+			$el->babble_element_id = $el->get_element_id( $el ) . "-original";
+		}
+		if ( false === empty( $el->children ) ) {
+			foreach ( $el->children as $child ) {
+				$this->maybe_update_ids( $child );
+			}
+		}
 	}
 
 	public function set_readonly_attribute( $el = null ) {
