@@ -119,11 +119,21 @@ class Babble_Fieldmanager_Group extends Fieldmanager_Group {
 	}
 }
 
-//No Visial Editor for Babble since it's not working properly
-class Babble_Fieldmanager_RichTextarea extends Fieldmanager_TextArea {
+class Babble_Fieldmanager_RichTextarea extends Fieldmanager_RichTextarea {
 	public function render_field( $name, $value, $title, $post ) {
 		$context = new Babble_Fieldmanager_Context( $title, $this );
 		return $context->render_fields( $post, $value, true );;
+	}
+	public function get_element_id() {
+		$el = $this;
+		$id_slugs = array();
+		while ( $el ) {
+			$slug = $el->is_proto ? 'proto' : $el->seq;
+			array_unshift( $id_slugs, $el->name . '-' . $slug );
+			$el = $el->parent;
+		}
+		//wp_editor can not take ID containintg '[]'
+		return str_replace( array( '[', ']' ), '-', 'fm-' . implode( '-', $id_slugs ) );
 	}
 }
 
