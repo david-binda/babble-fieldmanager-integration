@@ -148,6 +148,10 @@ class Babble_Fieldmanager_Meta_Field extends Babble_Meta_Field {
 
 	public $fm;
 
+	public $name;
+
+	public $args;
+
 	public function __construct( WP_Post $post, $meta_key, $meta_title, array $args = array() ) {
 
 		$this->post       = $post;
@@ -162,7 +166,8 @@ class Babble_Fieldmanager_Meta_Field extends Babble_Meta_Field {
 		$type = "Babble_{$type}";
 
 		//rename
-		$fm_args['name'] = "bbl_translation[meta][{$meta_key}]";
+		$this->name = "bbl_translation[meta][{$meta_key}]";
+		$fm_args['name'] = $this->name;
 
 		$this->fm = new $type( $fm_args );
 
@@ -174,7 +179,21 @@ class Babble_Fieldmanager_Meta_Field extends Babble_Meta_Field {
 	}
 
 	public function get_output() {
-		return serialize( $this->get_value() );
+		$this->set_readonly_attribute();
+		$field = $this->fm->render_field( $this->name, $this->get_value(), $this->meta_title, $this->post );
+		return $field;
+	}
+
+	public function set_readonly_attribute( $el = null ) {
+		if ( null === $el ) {
+			$el = $this->fm;
+		}
+		$el->attributes = array_merge( $el->attributes, array( 'readonly' => 'readonly' ) );
+		if ( false === empty( $el->children ) ) {
+			foreach ( $el->children as $child ) {
+				$this->set_readonly_attribute( $child );
+			}
+		}
 	}
 
 	public function get_title() {
