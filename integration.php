@@ -190,16 +190,32 @@ class Babble_Fieldmanager_Meta_Field extends Babble_Meta_Field {
 	public function get_output() {
 		$this->set_readonly_attribute();
 		$this->maybe_update_ids();
-		
+
+		add_filter( 'tiny_mce_before_init', array( $this, 'readonly_for_tinymce' ) );
+		add_filter( 'the_editor', array( $this, 'readonly_for_editor_textarea' ) );
+
 		ob_start();
 		echo $this->fm->render_field( $this->name, $this->get_value(), $this->meta_title, $this->post );
 		$field = ob_get_clean();
+
+		remove_filter( 'tiny_mce_before_init', array( $this, 'readonly_for_tinymce' ) );
+		remove_filter( 'the_editor', array( $this, 'readonly_for_editor_textarea' ) );
 
 		$original_meta = 'bbl_translation_original[meta]';
 		$field = str_replace( sprintf( 'name="%s' , $this->translation_meta_key ), sprintf( 'name="%s', $original_meta ) , $field );
 
 		//echoing the field instead of properly returing it will preserve HTML
 		echo $field;
+	}
+
+	public function readonly_for_tinymce( $args ) {
+		$args['readonly'] = 1;
+		return $args;
+	}
+	
+	public function readonly_for_editor_textarea( $the_editor ) {
+		$the_editor = str_replace( '>%s</textarea></div>', ' readonly="readonly">%s</textarea></div>', $the_editor );
+		return $the_editor;
 	}
 
 	public function maybe_update_ids( $el = null ) {
