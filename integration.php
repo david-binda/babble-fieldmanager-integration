@@ -379,6 +379,12 @@ class Babble_Translatable_Fieldmanager {
 			}
 
 		}
+
+		//Some fields need to register their scripts early
+		if ( 'Fieldmanager_Autocomplete' === $this->type ) {
+			fm_add_script( 'fm_autocomplete_js', 'js/fieldmanager-autocomplete.js', array( 'fieldmanager_script', 'jquery-ui-autocomplete' ), '1.0.5', false, 'fm_search', array( 'nonce' => wp_create_nonce( 'fm_search_nonce' ) ) );
+		}
+
 		add_filter( 'bbl_translated_meta_fields', array( $this, 'translated_meta_fields' ), 10, 2 );
 		add_filter( 'bbl_sync_meta_key', array( $this, 'do_not_sync' ), 10, 2 );
 		add_filter( 'bbl_meta_before_save', array( $this, 'before_meta_save' ), 10, 2 );
